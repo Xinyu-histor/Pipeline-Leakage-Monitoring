@@ -358,6 +358,110 @@ function drawCorrelation(x, y, w, h, c, theme) {
   drawText(`Δt = ${(c.dt * 1000).toFixed(1)} ms`, cx, y + h - 8, 11, theme.red, "700", "center");
 }
 
+function drawMobileSimulation(w, h, c, theme) {
+  const pad = Math.max(16, Math.min(24, w * 0.06));
+  const groundY = 82;
+  const pipeY = Math.min(230, Math.max(196, h * 0.36));
+  const pipeX0 = pad + 8;
+  const pipeX1 = w - pad - 8;
+  const pipeW = pipeX1 - pipeX0;
+  const pipeH = 54;
+  const sensorA = pipeX0 + pipeW * 0.1;
+  const sensorB = pipeX0 + pipeW * 0.9;
+  const sensorSpan = sensorB - sensorA;
+  const leakX = sensorA + sensorSpan * state.leakRatio;
+  state.dragGeometry = { sensorA, sensorB, pipeY, leakX };
+
+  ctx.fillStyle = theme.ground;
+  ctx.fillRect(0, groundY, w, h - groundY);
+  ctx.fillStyle = theme.road;
+  ctx.fillRect(0, groundY, w, 15);
+  drawText("路面/土壤介质", pad, groundY - 10, 11, theme.muted, "700");
+
+  drawRoundedRect(pipeX0, pipeY - pipeH / 2, pipeW, pipeH, 28, theme.pipeOuter, theme.pipeOuterStroke);
+  drawRoundedRect(pipeX0 + 8, pipeY - pipeH / 2 + 11, pipeW - 16, pipeH - 22, 22, theme.water, theme.waterStroke);
+  for (let i = 0; i < 9; i++) {
+    const x = pipeX0 + ((state.t * 36 + i * 58) % pipeW);
+    ctx.fillStyle = theme.waterPulse;
+    ctx.beginPath();
+    ctx.ellipse(x, pipeY, 13, 4, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.strokeStyle = c.profile.color;
+  ctx.lineWidth = 7;
+  ctx.beginPath();
+  ctx.moveTo(pipeX0, pipeY - pipeH / 2 - 2);
+  ctx.lineTo(pipeX1, pipeY - pipeH / 2 - 2);
+  ctx.stroke();
+
+  const phase = state.t * 6;
+  const waveY = pipeY - 56;
+  if (c.leakActive) {
+    const waveAmp = Math.min(17, 4 + Math.sqrt(Math.max(0, c.snr)) * 6);
+    drawWave(sensorA, leakX, waveY, waveAmp, phase, theme.red, 2);
+    drawWave(leakX, sensorB, waveY, waveAmp * 0.9, phase + 0.8, theme.red, 2);
+    drawText("泄露声沿‘管-水’结构耦合路径传播", w / 2, waveY - 20, 10, theme.red, "700", "center");
+  } else {
+    const backgroundAmp = Math.min(3.2, state.noise / 26);
+    drawWave(sensorA, leakX, waveY, backgroundAmp, phase * 0.4, theme.muted, 1.3);
+    drawWave(leakX, sensorB, waveY, backgroundAmp, phase * 0.4 + 0.5, theme.muted, 1.3);
+    drawText("无漏孔/无压差：仅背景噪声", w / 2, waveY - 20, 10, theme.muted, "700", "center");
+  }
+
+  drawText(`dA=${c.dA.toFixed(0)} m`, (sensorA + leakX) / 2, pipeY - 36, 10, theme.violet, "700", "center");
+  drawText(`dB=${c.dB.toFixed(0)} m`, (sensorB + leakX) / 2, pipeY - 36, 10, theme.violet, "700", "center");
+
+  [sensorA, sensorB].forEach((sx, idx) => {
+    drawRoundedRect(sx - 15, pipeY - 94, 30, 52, 7, theme.device, theme.deviceStroke);
+    ctx.fillStyle = theme.cyan;
+    ctx.fillRect(sx - 8, pipeY - 54, 16, 6);
+    ctx.strokeStyle = theme.device;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(sx, pipeY - 42);
+    ctx.lineTo(sx, pipeY - 28);
+    ctx.stroke();
+    drawText(idx === 0 ? "A" : "B", sx, pipeY - 104, 11, theme.ink, "700", "center");
+  });
+
+  ctx.fillStyle = theme.gold;
+  ctx.beginPath();
+  ctx.moveTo(leakX - 9, pipeY + 11);
+  ctx.lineTo(leakX + 9, pipeY + 11);
+  ctx.lineTo(leakX, pipeY + 52);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = theme.goldDark;
+  ctx.stroke();
+  if (c.leakActive) {
+    const jetHeight = Math.min(56, 16 + c.flowLs * 13);
+    ctx.strokeStyle = theme.red;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(leakX, pipeY + 24);
+    ctx.quadraticCurveTo(leakX + 11 * Math.sin(state.t * 5), pipeY + 39, leakX + 5, pipeY + 25 + jetHeight);
+    ctx.stroke();
+  }
+  drawText("可移动漏点", leakX, pipeY + 78, 12, theme.goldDark, "700", "center");
+  drawText(`${c.leakPos.toFixed(0)} m`, leakX, pipeY + 94, 11, theme.goldDark, "700", "center");
+  drawText(`管材：${c.profile.name}  有效声速≈${c.profile.velocity} m/s`, pad, pipeY + 124, 10, theme.muted, "700");
+
+  drawRoundedRect(pad, pipeY + 145, w - pad * 2, 44, 8, theme.card, theme.line);
+  drawText("4G / LTE Cat-1", pad + 12, pipeY + 163, 12, theme.blue, "700");
+  drawText("上传原始音频、设备状态与日志", pad + 12, pipeY + 181, 11, theme.muted);
+
+  const cardW = w - pad * 2;
+  drawSpectrum(pad, pipeY + 205, cardW, 82, c, theme);
+  drawCorrelation(pad, pipeY + 300, cardW, 84, c, theme);
+
+  const activeX = pipeX0 + (state.step / (steps.length - 1)) * pipeW;
+  ctx.fillStyle = theme.activePulse;
+  ctx.beginPath();
+  ctx.arc(activeX, pipeY, 24 + 3 * Math.sin(state.t * 3), 0, Math.PI * 2);
+  ctx.fill();
+}
+
 function drawSimulation() {
   const rect = canvas.getBoundingClientRect();
   const w = rect.width;
@@ -365,6 +469,11 @@ function drawSimulation() {
   const c = calc();
   const theme = themeColors();
   ctx.clearRect(0, 0, w, h);
+
+  if (w < 640) {
+    drawMobileSimulation(w, h, c, theme);
+    return;
+  }
 
   const groundY = Math.max(h * 0.34, 150);
   const pipeY = h * 0.58;
