@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>供水管网漏失监测工艺交互演示</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <section class="topbar" aria-label="项目概览">
+      <div>
+        <p class="eyebrow">Pipeline Leakage Monitoring</p>
+        <h1>供水管网漏失监测工艺交互演示</h1>
+      </div>
+    </section>
+
+    <section class="workspace">
+      <aside class="control-panel" aria-label="物理参数控制">
+        <div class="panel-section">
+          <div class="section-title">工艺步骤</div>
+          <div class="step-list" id="stepList"></div>
+        </div>
+
+        <div class="panel-section">
+          <div class="section-title">现场参数</div>
+          <label class="slider-row">
+            <span>管压 ΔP <b id="pressureValue">0.50 MPa</b></span>
+            <input id="pressure" type="range" min="0" max="0.9" step="0.05" value="0.5" />
+          </label>
+          <label class="slider-row">
+            <span>漏孔直径 d <b id="diameterValue">3.0 mm</b></span>
+            <input id="diameter" type="range" min="0" max="8" step="0.1" value="3" />
+          </label>
+          <label class="slider-row">
+            <span>传感器间距 L <b id="lengthValue">200 m</b></span>
+            <input id="length" type="range" min="60" max="500" step="10" value="200" />
+          </label>
+          <label class="slider-row">
+            <span>漏点位置 s <b id="leakValue">76 m / 38%</b></span>
+            <input id="leakRatio" type="range" min="5" max="95" step="1" value="38" />
+          </label>
+          <label class="slider-row">
+            <span>背景噪声 <b id="noiseValue">35%</b></span>
+            <input id="noise" type="range" min="0" max="80" step="5" value="35" />
+          </label>
+          <div class="segmented" role="group" aria-label="管材选择">
+            <button data-material="steel" class="active">钢/铸铁</button>
+            <button data-material="ductile">球墨铸铁</button>
+            <button data-material="pvc">PVC</button>
+            <button data-material="pe">PE</button>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <div class="section-title">动画与步骤</div>
+          <div class="play-row">
+            <button id="prevStep" class="icon-button" title="上一步" aria-label="上一步">‹</button>
+            <button id="playToggle" class="primary">暂停动画</button>
+            <button id="nextStep" class="icon-button" title="下一步" aria-label="下一步">›</button>
+          </div>
+        </div>
+      </aside>
+
+      <section class="visual-stage" aria-label="交互工艺流程">
+        <div class="process-track" id="processTrack"></div>
+        <div class="simulation-wrap">
+          <div class="canvas-metrics" aria-label="实时物理量">
+            <div><span>漏失量</span><strong id="flowRate">0.00 L/s</strong></div>
+            <div><span>射流速度</span><strong id="jetVelocity">0.0 m/s</strong></div>
+            <div><span>A/B 距离</span><strong id="sensorDistances">0 / 0 m</strong></div>
+            <div><span>相关时差</span><strong id="timeDelay">0.0 ms</strong></div>
+            <div><span>定位估计</span><strong id="locationEstimate">0 m</strong></div>
+          </div>
+          <canvas id="simCanvas" width="1120" height="540" aria-label="供水管道、可移动漏点、泄漏声波、传感器与平台分析动画"></canvas>
+        </div>
+      </section>
+
+      <aside class="detail-panel" aria-label="步骤详情">
+        <p class="detail-kicker" id="stepKicker">Step 01</p>
+        <h2 id="stepTitle">用水异常与立项</h2>
+        <p id="stepSummary"></p>
+
+        <div class="detail-block">
+          <h3>现场动作</h3>
+          <ul id="actions"></ul>
+        </div>
+        <div class="detail-block">
+          <h3>物理机制</h3>
+          <ul id="physics"></ul>
+        </div>
+        <div class="detail-block">
+          <h3>审查要点</h3>
+          <ul id="checks"></ul>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>
