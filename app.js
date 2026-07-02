@@ -116,6 +116,14 @@ const canvas = document.getElementById("simCanvas");
 const ctx = canvas.getContext("2d");
 const stepList = document.getElementById("stepList");
 const processTrack = document.getElementById("processTrack");
+const workspace = document.querySelector(".workspace");
+const visualStage = document.querySelector(".visual-stage");
+const simulationWrap = document.querySelector(".simulation-wrap");
+const detailPanel = document.querySelector(".detail-panel");
+const paramDrawer = document.getElementById("mobileParamDrawer");
+const paramDrawerToggle = document.getElementById("paramDrawerToggle");
+const paramDrawerBackdrop = document.getElementById("paramDrawerBackdrop");
+const mobileLayoutQuery = window.matchMedia("(max-width: 760px)");
 const controls = {
   pressure: document.getElementById("pressure"),
   diameter: document.getElementById("diameter"),
@@ -213,6 +221,35 @@ function resizeCanvas() {
   canvas.width = Math.max(800, Math.floor(rect.width * dpr));
   canvas.height = Math.max(420, Math.floor(rect.height * dpr));
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+function setParamDrawer(open) {
+  if (!paramDrawer || !paramDrawerToggle || !paramDrawerBackdrop) return;
+  paramDrawer.classList.toggle("drawer-open", open);
+  paramDrawerToggle.classList.toggle("drawer-open", open);
+  paramDrawerToggle.textContent = open ? "‹" : "›";
+  paramDrawerToggle.setAttribute("aria-expanded", String(open));
+  paramDrawerToggle.setAttribute("aria-label", open ? "隐藏现场参数" : "展开现场参数");
+  paramDrawerBackdrop.hidden = !open;
+}
+
+function syncMobileLayout() {
+  if (!workspace || !visualStage || !simulationWrap || !detailPanel) return;
+
+  if (mobileLayoutQuery.matches) {
+    if (detailPanel.parentElement !== visualStage) {
+      visualStage.insertBefore(detailPanel, simulationWrap);
+    }
+    if (!paramDrawer?.classList.contains("drawer-open")) {
+      setParamDrawer(false);
+    }
+    return;
+  }
+
+  if (detailPanel.parentElement !== workspace) {
+    workspace.appendChild(detailPanel);
+  }
+  setParamDrawer(false);
 }
 
 function darkModeActive() {
@@ -447,13 +484,14 @@ function drawMobileSimulation(w, h, c, theme) {
   drawText(`${c.leakPos.toFixed(0)} m`, leakX, pipeY + 94, 11, theme.goldDark, "700", "center");
   drawText(`管材：${c.profile.name}  有效声速≈${c.profile.velocity} m/s`, pad, pipeY + 124, 10, theme.muted, "700");
 
-  drawRoundedRect(pad, pipeY + 145, w - pad * 2, 44, 8, theme.card, theme.line);
-  drawText("4G / LTE Cat-1", pad + 12, pipeY + 163, 12, theme.blue, "700");
+  const cardW = w - pad * 2;
+  const analysisTop = pipeY + 145;
+  drawRoundedRect(pad, analysisTop, cardW, 52, 8, theme.card, theme.line);
+  drawText("4G / LTE Cat-1", pad + 12, analysisTop + 21, 12, theme.blue, "700");
   drawText("上传原始音频、设备状态与日志", pad + 12, pipeY + 181, 11, theme.muted);
 
-  const cardW = w - pad * 2;
-  drawSpectrum(pad, pipeY + 205, cardW, 82, c, theme);
-  drawCorrelation(pad, pipeY + 300, cardW, 84, c, theme);
+  drawSpectrum(pad, analysisTop + 68, cardW, 108, c, theme);
+  drawCorrelation(pad, analysisTop + 194, cardW, 116, c, theme);
 
   const activeX = pipeX0 + (state.step / (steps.length - 1)) * pipeW;
   ctx.fillStyle = theme.activePulse;
@@ -664,10 +702,27 @@ document.getElementById("playToggle").addEventListener("click", () => {
   document.getElementById("playToggle").textContent = state.playing ? "暂停动画" : "播放动画";
 });
 
-window.addEventListener("resize", resizeCanvas);
+paramDrawerToggle?.addEventListener("click", () => {
+  setParamDrawer(!paramDrawer?.classList.contains("drawer-open"));
+});
+
+paramDrawerBackdrop?.addEventListener("click", () => setParamDrawer(false));
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") setParamDrawer(false);
+});
+
+function handleViewportChange() {
+  syncMobileLayout();
+  resizeCanvas();
+}
+
+window.addEventListener("resize", handleViewportChange);
+mobileLayoutQuery.addEventListener?.("change", handleViewportChange);
 window.matchMedia?.("(prefers-color-scheme: dark)")?.addEventListener?.("change", drawSimulation);
-resizeCanvas();
 renderStepControls();
 renderDetail();
+syncMobileLayout();
+resizeCanvas();
 updateNumbers();
 tick();

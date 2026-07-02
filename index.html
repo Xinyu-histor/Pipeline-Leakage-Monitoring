@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>供水管网漏失监测工艺交互演示</title>
-  <link rel="stylesheet" href="./styles.css?v=mobile-20260702" />
+  <link rel="stylesheet" href="./styles.css?v=mobile-20260702b" />
 </head>
 <body>
   <main class="app-shell">
@@ -16,7 +16,10 @@
     </section>
 
     <section class="workspace">
-      <aside class="control-panel" aria-label="物理参数控制">
+      <button id="paramDrawerToggle" class="param-drawer-toggle" type="button" aria-controls="mobileParamDrawer" aria-expanded="false" aria-label="展开现场参数">›</button>
+      <div id="paramDrawerBackdrop" class="param-drawer-backdrop" hidden></div>
+
+      <aside class="control-panel" id="mobileParamDrawer" aria-label="物理参数控制">
         <div class="panel-section">
           <div class="section-title">工艺步骤</div>
           <div class="step-list" id="stepList"></div>
@@ -97,6 +100,6 @@
     </section>
   </main>
 
-  <script src="./app.js?v=mobile-20260702"></script>
+  <script src="./app.js?v=mobile-20260702b"></script>
 </body>
 </html>
